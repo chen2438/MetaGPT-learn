@@ -18,6 +18,8 @@ from metagpt.schema import Message
 from metagpt.team import Team
 
 # 从输入字符串中提取 Python 代码
+
+
 def parse_code(rsp):
     pattern = r"```python(.*)```"  # 匹配代码块的正则表达式
     match = re.search(pattern, rsp, re.DOTALL)  # 匹配整个字符串，包括换行符
@@ -32,11 +34,12 @@ class SimpleWriteCode(Action):
     Return ```python your_code_here ``` with NO other texts,
     your code:
     """
-    name: str = "SimpleWriteCode"  
+    name: str = "SimpleWriteCode"
 
     # 异步运行Action，返回代码
     async def run(self, instruction: str):
-        prompt = self.PROMPT_TEMPLATE.format(instruction=instruction)  # 将instruction插入到prompt中
+        prompt = self.PROMPT_TEMPLATE.format(
+            instruction=instruction)  # 将instruction插入到prompt中
         rsp = await self._aask(prompt)  # 使用 MetaGPT 的异步询问功能获取响应
         code_text = parse_code(rsp)  # 提取代码块
         return code_text
@@ -45,10 +48,10 @@ class SimpleWriteCode(Action):
 # 写代码Role
 class SimpleCoder(Role):
     name: str = "Alice"
-    profile: str = "SimpleCoder"  
+    profile: str = "SimpleCoder"
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs) # 调用父类（Role）的构造函数
+        super().__init__(**kwargs)  # 调用父类（Role）的构造函数
         self._watch([UserRequirement])  # 监听用户需求
         self.set_actions([SimpleWriteCode])  # Action = SimpleWriteCode
 
@@ -65,7 +68,8 @@ class SimpleWriteTest(Action):
 
     # 异步运行Action
     async def run(self, context: str, k: int = 3):
-        prompt = self.PROMPT_TEMPLATE.format(context=context, k=k)  # 将context插入到prompt中
+        prompt = self.PROMPT_TEMPLATE.format(
+            context=context, k=k)  # 将context插入到prompt中
         rsp = await self._aask(prompt)  # 使用异步询问功能获取响应
         code_text = parse_code(rsp)  # 提取代码块
         return code_text
@@ -74,7 +78,7 @@ class SimpleWriteTest(Action):
 # 写测试Role
 class SimpleTester(Role):
     name: str = "Bob"
-    profile: str = "SimpleTester" 
+    profile: str = "SimpleTester"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -83,11 +87,13 @@ class SimpleTester(Role):
 
     # 重写行为逻辑，返回Message
     async def _act(self) -> Message:
-        logger.info(f"{self._setting}: to do {self.rc.todo}({self.rc.todo.name})")
+        logger.info(
+            f"{self._setting}: to do {self.rc.todo}({self.rc.todo.name})")
         todo = self.rc.todo
         context = self.get_memories()  # 获取所有的记忆作为上下文
         code_text = await todo.run(context, k=5)  # 执行任务并指定参数
-        msg = Message(content=code_text, role=self.profile, cause_by=type(todo))
+        msg = Message(content=code_text, role=self.profile,
+                      cause_by=type(todo))
         return msg
 
 
@@ -97,7 +103,7 @@ class SimpleWriteReview(Action):
     Context: {context}
     Review the test cases and provide one critical comments:
     """
-    name: str = "SimpleWriteReview"  
+    name: str = "SimpleWriteReview"
 
     # 异步运行Action
     async def run(self, context: str):
@@ -109,7 +115,7 @@ class SimpleWriteReview(Action):
 # 评审Role （对测试用例的评审）
 class SimpleReviewer(Role):
     name: str = "Charlie"
-    profile: str = "SimpleReviewer" 
+    profile: str = "SimpleReviewer"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -123,14 +129,15 @@ async def main(
     n_round: int = 5,
     add_human: bool = False,
 ):
-    logger.info(idea) 
+    logger.info(idea)
 
     team = Team()  # 创建团队对象
     team.hire(
         [
             SimpleCoder(),  # 招募编码Role
             SimpleTester(),  # 招募测试Role
-            SimpleReviewer(is_human=add_human),  # 招募评审Role
+            # SimpleReviewer(is_human=add_human),  # 招募评审Role
+            SimpleReviewer(is_human=True),
         ]
     )
 
